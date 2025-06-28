@@ -1,0 +1,679 @@
+@startuml
+!theme plain
+!define PLANTUML_LIMIT_SIZE 16384
+skinparam dpi 150
+skinparam maxMessageSize 200
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+skinparam packageStyle rectangle
+skinparam wrapWidth 250
+
+title Sistema di Gestione Rifugio Animali OASIS - Diagramma UML
+
+package "Main Application" {
+    class Main {
+        -{static} logger: Logger
+        -{static} ANIMAL_FILE: String
+        -{static} PEOPLE_FILE: String
+        -dataService: DataService
+        -scanner: Scanner
+        -currentUser: Person
+        -currentMenu: Menu
+        --
+        +main(String[]): void
+        +run(): void
+        -displayWelcomeMessage(): void
+        -initializeSystem(): void
+        -performLogin(): boolean
+        -authenticateUser(): boolean
+        -createNewDonorAccount(): boolean
+        -validateSexInput(): String
+        -validateNameInput(String): String
+        -validateDateInput(): String
+        -createUserMenu(): void
+        -runUserSession(): void
+        -cleanup(): void
+    }
+}
+
+package "Menu System (Factory Pattern)" {
+    interface Menu {
+        +displayOptions(): void
+        +processUserChoice(int): void
+        +logout(): void
+        +isSessionActive(): boolean
+    }
+
+    abstract class MenuFactory {
+        +{abstract} createMenu(Person): Menu
+        +{static} getFactory(Person): MenuFactory
+    }
+
+    class AdminMenuFactory {
+        +createMenu(Person): Menu
+    }
+
+    class VeterinarianMenuFactory {
+        +createMenu(Person): Menu
+    }
+
+    class ExternalUserMenuFactory {
+        +createMenu(Person): Menu
+    }
+
+    class AdminMenu {
+        #admin: Admin
+        #dataService: DataService
+        #visitManager: VisitManagement
+        #scanner: Scanner
+        #sessionActive: boolean
+        #{static} logger: Logger
+        --
+        +AdminMenu(Admin)
+        +displayOptions(): void
+        +processUserChoice(int): void
+        +logout(): void
+        +isSessionActive(): boolean
+        #displayAnimals(): void
+        #displayStaff(): void
+        #displayScheduledVisits(): void
+        #addNewAnimal(): void
+        #addStaffMember(): void
+        -validateSexInput(): String
+        -validateNameInput(): String
+        -validateAnimalNameInput(): String
+        -validateSpeciesInput(): String
+        -validateDateInput(): String
+        -validateProfessionInput(): String
+        -validateRoleInput(): String
+    }
+
+    class VeterinarianMenu {
+        -currentGroup: AnimalGroup
+        --
+        +VeterinarianMenu(Admin)
+        +displayOptions(): void
+        +processUserChoice(int): void
+        -performIndividualClinicalOperations(): void
+        -performGroupOperations(): void
+        -createOrSelectGroup(): AnimalGroup
+        -createGroupBySpecies(): AnimalGroup
+        -createCustomGroup(): AnimalGroup
+        -performGroupVaccination(AnimalGroup): void
+        -performGroupSterilization(AnimalGroup): void
+        -performGroupMedicalCare(AnimalGroup): void
+        -getExclusionList(AnimalGroup): List
+        -performVaccination(Animal): void
+        -performSterilization(Animal): void
+        -assignMedicalCare(Animal): void
+        -addMedicalNote(Animal): void
+        -viewMedicalHistory(): void
+        -updateHealthStatus(): void
+        -displayHealthStatistics(): void
+        -manageAnimalGroups(): void
+        -findAnimalByName(String): Animal
+        +logout(): void
+    }
+
+    class ExternalUserMenu {
+        -donor: Donor
+        -visitManager: VisitManagement
+        -shelterClient: ShelterClient
+        -scanner: Scanner
+        -sessionActive: boolean
+        --
+        +ExternalUserMenu(Donor)
+        +displayOptions(): void
+        +processUserChoice(int): void
+        -scheduleVisit(): void
+        -displayUserVisits(): void
+        -rescheduleExistingVisit(): void
+        -cancelExistingVisit(): void
+        -showAvailableSlots(): void
+        -initiateAdoption(): void
+        -showAvailableAnimals(): void
+        +logout(): void
+        +isSessionActive(): boolean
+    }
+}
+
+package "Entity System" {
+    abstract class Being {
+        -sex: String
+        -name: String
+        -registrationDate: String
+        --
+        +Being(String, String)
+        +{abstract} getRole(): String
+        -validateAndSetSex(String): void
+        -validateAndSetName(String): void
+        -setRegistrationDate(): void
+        +getName(): String
+        +setName(String): void
+        +getSex(): String
+        +setSex(String): void
+        +getRegistrationDate(): String
+    }
+
+    abstract class Person {
+        #surname: String
+        #birthDate: String
+        #date: LocalDate
+        #age: int
+        #email: String
+        #telephone: int
+        -{static} DATE_PATTERN: Pattern
+        -{static} EMAIL_PATTERN: Pattern
+        --
+        +Person(String, String, String, String)
+        +getRole(): String
+        -validateAndSetSurname(String): void
+        -validateAndSetBirthDate(String): void
+        -calculateAge(): void
+        +getSurname(): String
+        +setSurname(String): void
+        +getBirthDate(): String
+        +setBirthDate(String): void
+        +getEmail(): String
+        +setEmail(String): void
+        +getTelephone(): int
+        +setTelephone(int): void
+        +getAge(): int
+        +getFormattedBirthDate(): String
+    }
+
+    class Animal {
+        -species: String
+        -vaccinated: boolean
+        -sterilized: boolean
+        -underMedicalCare: boolean
+        -currentVeterinarian: Admin
+        -medicalCondition: String
+        -medicalHistory: List
+        -lastVaccinationDate: LocalDate
+        -sterilizationDate: LocalDate
+        --
+        +Animal(String, String, String)
+        +getRole(): String
+        +performVaccination(String, LocalDate): void
+        +setSterilizationStatus(boolean, LocalDate, Admin): void
+        +setUnderMedicalCare(boolean, Admin, String): void
+        +addMedicalNote(String, LocalDate, Admin): void
+        +isVaccinated(): boolean
+        +isSterilized(): boolean
+        +isUnderMedicalCare(): boolean
+        +getMedicalHistory(): List
+        +getSpecies(): String
+        +setSpecies(String): void
+        +getLastVaccinationDate(): LocalDate
+        +getSteriliDate(): LocalDate
+        +getAssignedVeterinarian(): Admin
+        +getHealthSummary(): String
+        -saveToFile(): void
+        +saveAnimal(): void
+        +{static} createNewAnimal(String, String, String): Animal
+        +{static} loadFromFile(String, String, String): Animal
+    }
+
+    class Admin {
+        -profession: String
+        -adminRole: Role
+        --
+        +Admin(String, String, String, String, String, Role)
+        -validateAdminRole(Role): void
+        +performClinicalOperation(Animal, String, String): void
+        +isVeterinarian(): boolean
+        +isAdmin(): boolean
+        +canPerformClinicalOperations(): boolean
+        +getRole(): String
+        +getProfession(): String
+        +setProfession(String): void
+        +getAdminRole(): Role
+        -saveToFile(): void
+        +saveAdmin(): void
+        +{static} createNewAdmin(String, String, String, String, String, Role): Admin
+        +{static} loadFromFile(String, String, String, String, String, Role): Admin
+    }
+
+    class Donor {
+        -statusDonator: Status
+        -role: Role
+        --
+        +Donor(String, String, String, String, Role)
+        +getRole(): String
+        +getRoleEnum(): Role
+        +getStatusDonator(): Status
+        +setStatusDonator(Status): void
+        -saveToFile(): void
+        +saveDonor(): void
+        +{static} createNewDonor(String, String, String, String, Role): Donor
+        +{static} loadFromFile(String, String, String, String, Role): Donor
+    }
+
+    interface ClinicalOperations {
+        +performVaccination(String, LocalDate): void
+        +setSterilizationStatus(boolean, LocalDate, Admin): void
+        +setUnderMedicalCare(boolean, Admin, String): void
+        +addMedicalNote(String, LocalDate, Admin): void
+        +isVaccinated(): boolean
+        +isSterilized(): boolean
+        +isUnderMedicalCare(): boolean
+        +getMedicalHistory(): List
+    }
+
+    enum Role {
+        ADMIN
+        VETERINARIAN
+        DONOR
+    }
+
+    enum Status {
+        Visitor
+        Adopter
+        None
+    }
+}
+
+package "Composite Pattern (Animal Groups)" {
+    interface AnimalComponent {
+        +performVaccination(String, LocalDate, Admin): void
+        +setUnderMedicalCare(boolean, Admin, String): void
+        +performSterilization(LocalDate, Admin): void
+        +add(AnimalComponent): void
+        +remove(AnimalComponent): void
+        +getChild(int): AnimalComponent
+        +getCount(): int
+        +getAllAnimals(): List
+        +displayInfo(): void
+        +getGroupName(): String
+    }
+
+    class AnimalLeaf {
+        -animal: Animal
+        --
+        +AnimalLeaf(Animal)
+        +performVaccination(String, LocalDate, Admin): void
+        +setUnderMedicalCare(boolean, Admin, String): void
+        +performSterilization(LocalDate, Admin): void
+        +add(AnimalComponent): void
+        +remove(AnimalComponent): void
+        +getChild(int): AnimalComponent
+        +getCount(): int
+        +getAllAnimals(): List
+        +displayInfo(): void
+        +getGroupName(): String
+        +getAnimal(): Animal
+    }
+
+    class AnimalGroup {
+        -components: List
+        -groupName: String
+        -groupType: String
+        --
+        +AnimalGroup(String, String)
+        +add(AnimalComponent): void
+        +remove(AnimalComponent): void
+        +getChild(int): AnimalComponent
+        +performVaccination(String, LocalDate, Admin): void
+        +performVaccinationWithExclusions(String, LocalDate, Admin, List): void
+        +setUnderMedicalCare(boolean, Admin, String): void
+        +setUnderMedicalCareWithExclusions(boolean, Admin, String, List): void
+        +performSterilization(LocalDate, Admin): void
+        +performSterilizationWithExclusions(LocalDate, Admin, List): void
+        -performOperationOnComponents(ComponentOperation, String): void
+        -shouldExcludeComponent(AnimalComponent, List): boolean
+        -validateExclusions(List): void
+        +getCount(): int
+        +getAllAnimals(): List
+        +displayInfo(): void
+        -displayHealthStatistics(): void
+        +getGroupName(): String
+        +getGroupType(): String
+        +getComponents(): List
+    }
+}
+
+package "Activities & Services" {
+    class Adoption {
+        -adoptableAnimals: List
+        -selectedSpecies: String
+        -donors: List
+        -adopted: HashMap
+        -adoptionMatches: HashMap
+        --
+        +Adoption(String, String)
+        +adopt(Donor): void
+        +cancelAdoption(Animal, Donor): void
+        -isDonorAuthorized(Donor): boolean
+        -displayAvailableSpecies(): void
+        -getUserSpeciesSelection(): String
+        -findAvailableAnimalBySpecies(String): Animal
+        -completeAdoptionProcess(Donor, Animal): void
+        +getAdoptableAnimals(): List
+        +getAdoptionMatches(): Map
+        +getAvailableAnimals(): List
+        +getAdoptedAnimals(): Map
+        +getAuthorizedDonors(): List
+    }
+
+    class Visit {
+        -visitId: int
+        -{static} nextAvailableId: int
+        -visitor: Donor
+        -scheduledDate: String
+        -scheduledTime: PeriodTime
+        -active: boolean
+        --
+        +Visit(Donor, String, PeriodTime)
+        +reschedule(String, PeriodTime): void
+        +cancel(): void
+        +isActive(): boolean
+        +getVisitId(): int
+        +getVisitor(): Donor
+        +getDate(): String
+        +getTime(): PeriodTime
+    }
+
+    class VisitManagement {
+        -allVisits: List
+        -visitLookup: Map
+        -{static} MAX_VISITS_PER_PERIOD: int
+        --
+        +bookVisit(Donor, String, PeriodTime): Visit
+        +rescheduleVisit(String, String, PeriodTime): void
+        +cancelVisit(String): void
+        +findVisitById(String): Visit
+        +getVisitsForDonor(Donor): List
+        +getActiveVisits(): List
+        +getVisitsForDate(String): List
+        +getVisitsForDateAndPeriod(String, PeriodTime): long
+        +getAvailableSlotsIterator(int): Iterator
+        +getNextAvailableSlots(int, int): List
+        +hasAvailabilityFromTomorrow(int): boolean
+        +displayScheduledVisits(): void
+        +displayAllAvailableSlots(int): void
+        +displayUserVisits(Donor): void
+        -validateDateFormat(String): void
+        -validateCapacityAvailable(String, PeriodTime): void
+        +getAllVisits(): List
+    }
+
+    class AvailableSlotsIterator {
+        -currentDate: LocalDate
+        -maxDate: LocalDate
+        -visitManager: VisitManagement
+        -availablePeriods: List
+        -periodIndex: int
+        --
+        +AvailableSlotsIterator(VisitManagement, int)
+        +hasNext(): boolean
+        +next(): String
+        -formatDate(LocalDate): String
+        -hasAvailableSlots(String, PeriodTime): boolean
+    }
+
+    class ShelterClient {
+        -adoptionService: Adoption
+        --
+        +initializeSystem(String, String): void
+        +processAdoptionRequest(Donor): void
+        +cancelAdoptionRequest(Animal, Donor): void
+        +getAvailableAnimals(): List
+    }
+
+    enum PeriodTime {
+        Morning
+        Afternoon
+    }
+}
+
+package "Data Management" {
+    class DataService {
+        -{static} ANIMAL_PATTERN: Pattern
+        -{static} PERSON_PATTERN: Pattern
+        --
+        +loadAnimals(String): List
+        +loadPersons(String): List
+        +performAdoption(List, List, Donor, String, Map, Map): void
+        -parseAnimalLine(String): Animal
+        -parsePersonLine(String): Person
+        -createAdminPerson(String, String, String, String, String, String): Admin
+        -createDonorPerson(String, String, String, String): Donor
+        -validateAdoptionPreconditions(List, List, Donor): void
+        -validateDonorAuthorization(Donor, List): void
+        -findAvailableAnimalBySpecies(List, String): Animal
+        -executeAdoptionTransaction(Donor, Animal, List, Map, Map): void
+        +displayAnimalStatistics(List): void
+        +displayPeopleStatistics(List): void
+    }
+
+    class AnimalUploading {
+        -animalList: ArrayList
+        -{static} ANIMAL_PATTERN: Pattern
+        --
+        +AnimalUploading(String)
+        -processAnimalLine(String): void
+        +animalList(): List
+    }
+
+    class PeopleUploading {
+        -peopleList: ArrayList
+        -{static} PERSON_PATTERN: Pattern
+        --
+        +PeopleUploading(String)
+        -processPersonLine(String): void
+        -createAdminPerson(String, String, String, String, String, String): void
+        -createDonorPerson(String, String, String, String): void
+        +peopleList(): List
+    }
+
+    class SpeciesSet {
+        +{static} specieSet: Set
+    }
+
+    class ProfessionalSet {
+        +{static} professions: Set
+    }
+}
+
+package "Exception Management" {
+    class OasisUserException {
+        +OasisUserException(String)
+        +OasisUserException(String, Throwable)
+        +OasisUserException(String, Throwable, String)
+    }
+
+    class OasisExceptionShieldingHandler {
+        -{static} logger: Logger
+        +{static} executeWithShield(RiskyOperation, String): void
+        +{static} executeWithShield(RiskySupplier, String): T
+        -createIOErrorMessage(IOException, String): String
+    }
+
+    interface RiskyOperation {
+        +execute(): void
+    }
+
+    interface RiskySupplier {
+        +get(): T
+    }
+
+    class LengthException {
+        +LengthException(String)
+    }
+
+    class SexException {
+        +SexException(String)
+    }
+
+    class EmailException {
+        +EmailException(String)
+    }
+
+    class AgeException {
+        +AgeException(String)
+    }
+
+    class DateException {
+        +DateException(String)
+    }
+
+    class AdoptionException {
+        +AdoptionException(String)
+        +AdoptionException(String, Throwable)
+        +{static} animalNotAvailable(String, String): AdoptionException
+        +{static} donorNotEligible(String, String): AdoptionException
+    }
+
+    class DataAccessException {
+        +DataAccessException(String)
+        +DataAccessException(String, Throwable)
+        +{static} fileNotFound(String): DataAccessException
+        +{static} readError(String, Throwable): DataAccessException
+        +{static} writeError(String, Throwable): DataAccessException
+    }
+
+    class AnimalCreationException {
+        +AnimalCreationException(String)
+        +AnimalCreationException(String, Throwable)
+    }
+
+    class PersonCreationException {
+        +PersonCreationException(String)
+        +PersonCreationException(String, Throwable)
+    }
+
+    class VeterinaryOperationException {
+        +VeterinaryOperationException(String)
+        +VeterinaryOperationException(String, Throwable)
+    }
+
+    class VisitException {
+        +VisitException(String)
+        +VisitException(String, Throwable)
+        +{static} timeNotAvailable(String, String): VisitException
+        +{static} cannotModify(String, String): VisitException
+    }
+}
+
+' === RELAZIONI ===
+
+' Inheritance
+Being <|-- Person
+Being <|-- Animal
+Person <|-- Admin
+Person <|-- Donor
+MenuFactory <|-- AdminMenuFactory
+MenuFactory <|-- VeterinarianMenuFactory
+MenuFactory <|-- ExternalUserMenuFactory
+AdminMenu <|-- VeterinarianMenu
+RuntimeException <|-- LengthException
+RuntimeException <|-- SexException
+RuntimeException <|-- EmailException
+RuntimeException <|-- AgeException
+RuntimeException <|-- DateException
+Exception <|-- OasisUserException
+OasisUserException <|-- AdoptionException
+OasisUserException <|-- DataAccessException
+OasisUserException <|-- AnimalCreationException
+OasisUserException <|-- PersonCreationException
+OasisUserException <|-- VeterinaryOperationException
+OasisUserException <|-- VisitException
+
+' Interface implementations
+Menu <|.. AdminMenu
+Menu <|.. VeterinarianMenu
+Menu <|.. ExternalUserMenu
+ClinicalOperations <|.. Animal
+AnimalComponent <|.. AnimalLeaf
+AnimalComponent <|.. AnimalGroup
+Iterator <|.. AvailableSlotsIterator
+RiskyOperation <|.. OasisExceptionShieldingHandler
+RiskySupplier <|.. OasisExceptionShieldingHandler
+
+' Composition/Aggregation
+Main *-- DataService
+Main *-- Scanner
+Main *-- Person
+Main *-- Menu
+AnimalGroup *-- AnimalComponent
+AnimalLeaf *-- Animal
+VisitManagement *-- Visit
+Visit *-- Donor
+Visit *-- PeriodTime
+Adoption *-- Animal
+Adoption *-- Donor
+AdminMenu *-- Admin
+AdminMenu *-- DataService
+AdminMenu *-- VisitManagement
+VeterinarianMenu *-- AnimalGroup
+ExternalUserMenu *-- Donor
+ExternalUserMenu *-- VisitManagement
+ExternalUserMenu *-- ShelterClient
+ShelterClient *-- Adoption
+
+' Dependencies
+MenuFactory ..> Person
+Main ..> MenuFactory
+Main ..> Menu
+Main ..> OasisExceptionShieldingHandler
+ShelterClient ..> DataService
+DataService ..> Animal
+DataService ..> Person
+VisitManagement ..> AvailableSlotsIterator
+Animal ..> SpeciesSet
+Admin ..> ProfessionalSet
+AnimalUploading ..> Animal
+PeopleUploading ..> Admin
+PeopleUploading ..> Donor
+
+' Notes for clarity
+note right of AnimalComponent
+  Composite Pattern:
+  - AnimalLeaf (singolo animale)
+  - AnimalGroup (collezione)
+  Supporta operazioni bulk
+  con liste di esclusione
+end note
+
+note right of MenuFactory
+  Factory Pattern:
+  Crea menu appropriato basato
+  sul ruolo utente:
+  - Admin → AdminMenu
+  - Veterinarian → VeterinarianMenu  
+  - Donor → ExternalUserMenu
+end note
+
+note right of AvailableSlotsIterator
+  Iterator Pattern:
+  Attraversa slot visite disponibili
+  su più date e periodi
+  con controllo capacità
+end note
+
+note right of OasisExceptionShieldingHandler
+  Exception Shielding:
+  Converte eccezioni tecniche
+  in messaggi user-friendly
+  Gestione errori centralizzata
+end note
+
+note right of Main
+  Entry Point:
+  - Gestisce ciclo applicazione
+  - Login/logout utenti
+  - Creazione account donor
+  - Inizializzazione sistema
+end note
+
+note right of VeterinarianMenu
+  Funzionalità Avanzate:
+  - Operazioni cliniche individuali
+  - Operazioni di gruppo
+  - Gestione gruppi animali
+  - Statistiche sanitarie
+end note
+
+@enduml

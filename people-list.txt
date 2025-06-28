@@ -1,0 +1,7 @@
+Admin F Annamaria Rossi 1978-04-03 Veterinario VETERINARIAN
+Donor F Luciana Bianchi 1960-05-20 ADMIN
+Admin M Marco Gusperti 1970-02-18 Amministratore ADMIN
+Donor M Lucio Mossa 1995-08-02 DONOR
+Admin F Lorella Adorno 1968-12-03 Veterinario VETERINARIAN
+Admin F Antonia Molinari 2000-10-10 Curatore DONOR
+Donor M Fabio Casali 1981-09-13 DONOR
