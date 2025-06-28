@@ -101,7 +101,7 @@ People-list.txt (Format: [Type] [Gender] [Name] [Surname] [BirthDate] [Professio
 Existing User: Enter first name and surname from People-list.txt
 New Donor: Create a new donor account through the registration process
 
-![Diagramma UML](out/diagram.svg)
+![Diagramma UML](diagram.svg)
 
 LIMITATIONS
 
